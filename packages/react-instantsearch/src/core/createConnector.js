@@ -63,8 +63,20 @@ export default function createConnector(connectorDesc) {
 
         const { ais: { store, widgetsManager } } = context;
         const canRender = false;
+
+        const initialUiState = connectorDesc.getInitialUiState
+          ? connectorDesc.getInitialUiState(props)
+          : {};
+
         this.state = {
-          props: this.getProvidedProps({ ...props, canRender }),
+          uiState: initialUiState,
+          props: this.getProvidedProps({
+            uiState: initialUiState,
+            props: {
+              ...props,
+              canRender,
+            },
+          }),
           canRender, // use to know if a component is rendered (browser), or not (server).
         };
 
@@ -72,8 +84,10 @@ export default function createConnector(connectorDesc) {
           if (this.state.canRender) {
             this.setState({
               props: this.getProvidedProps({
-                ...this.props,
-                canRender: this.state.canRender,
+                props: {
+                  ...this.props,
+                  canRender: this.state.canRender,
+                },
               }),
             });
           }
@@ -167,7 +181,9 @@ export default function createConnector(connectorDesc) {
       componentWillReceiveProps(nextProps) {
         if (!isEqual(this.props, nextProps)) {
           this.setState({
-            props: this.getProvidedProps(nextProps),
+            props: this.getProvidedProps({
+              props: nextProps,
+            }),
           });
 
           if (isWidget) {
@@ -218,8 +234,7 @@ export default function createConnector(connectorDesc) {
         return !propsEqual || !shallowEqual(this.state.props, nextState.props);
       }
 
-      getProvidedProps = props => {
-        const { ais: { store } } = this.context;
+      getProvidedProps = ({ props, uiState }) => {
         const {
           results,
           searching,
@@ -229,7 +244,8 @@ export default function createConnector(connectorDesc) {
           resultsFacetValues,
           searchingForFacetValues,
           isSearchStalled,
-        } = store.getState();
+        } = this.context.ais.store.getState();
+
         const searchResults = {
           results,
           searching,
@@ -237,13 +253,15 @@ export default function createConnector(connectorDesc) {
           searchingForFacetValues,
           isSearchStalled,
         };
+
         return connectorDesc.getProvidedProps.call(
           this,
           props,
           widgets,
           searchResults,
           metadata,
-          resultsFacetValues
+          resultsFacetValues,
+          uiState
         );
       };
 
