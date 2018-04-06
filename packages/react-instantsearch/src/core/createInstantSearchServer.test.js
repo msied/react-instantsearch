@@ -79,10 +79,7 @@ describe('createInstantSearchServer', () => {
         );
 
         return findResultsState(App)
-          .then(() => {
-            getSearchParameters.mockClear();
-            return findResultsState(App);
-          })
+          .then(() => findResultsState(App))
           .then(() => {
             expect(getSearchParameters).toHaveBeenCalledTimes(2);
           });
@@ -193,11 +190,7 @@ describe('createInstantSearchServer', () => {
         );
 
         return findResultsState(App)
-          .then(() => {
-            getSearchParameters.mockClear();
-
-            return findResultsState(App);
-          })
+          .then(() => findResultsState(App))
           .then(() => {
             expect(getSearchParameters).toHaveBeenCalledTimes(2);
           });
