@@ -61,26 +61,10 @@ export default function createConnector(connectorDesc) {
       constructor(props, context) {
         super(props, context);
 
-        const { ais: { store, widgetsManager } } = context;
-        const canRender = false;
         this.state = {
-          props: this.getProvidedProps({ ...props, canRender }),
-          canRender, // use to know if a component is rendered (browser), or not (server).
+          props: this.getProvidedProps(props),
         };
 
-        this.unsubscribe = store.subscribe(() => {
-          if (this.state.canRender) {
-            this.setState({
-              props: this.getProvidedProps({
-                ...this.props,
-                canRender: this.state.canRender,
-              }),
-            });
-          }
-        });
-        if (isWidget) {
-          this.unregisterWidget = widgetsManager.registerWidget(this);
-        }
         if (process.env.NODE_ENV === 'development') {
           const onlyGetProvidedPropsUsage = !find(
             Object.keys(connectorDesc),
@@ -149,9 +133,17 @@ export default function createConnector(connectorDesc) {
       }
 
       componentDidMount() {
-        this.setState({
-          canRender: true,
+        const { ais } = this.context;
+
+        this.unsubscribe = ais.store.subscribe(() => {
+          this.setState({
+            props: this.getProvidedProps(this.props),
+          });
         });
+
+        if (isWidget) {
+          this.unregisterWidget = ais.widgetsManager.registerWidget(this);
+        }
       }
 
       componentWillMount() {
@@ -189,19 +181,25 @@ export default function createConnector(connectorDesc) {
       }
 
       componentWillUnmount() {
-        this.unsubscribe();
-        if (isWidget) {
+        if (this.unsubscribe) {
+          this.unsubscribe();
+        }
+
+        if (this.unregisterWidget) {
           this.unregisterWidget(); // will schedule an update
+
           if (hasCleanUp) {
             const newState = connectorDesc.cleanUp.call(
               this,
               this.props,
               this.context.ais.store.getState().widgets
             );
+
             this.context.ais.store.setState({
               ...this.context.ais.store.getState(),
               widgets: newState,
             });
+
             this.context.ais.onSearchStateChange(removeEmptyKey(newState));
           }
         }

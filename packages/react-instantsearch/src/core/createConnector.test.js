@@ -30,7 +30,6 @@ describe('createConnector', () => {
       const state = createState();
       const props = {
         hello: 'there',
-        canRender: false,
       };
       const wrapper = mount(<Connected {...props} />, {
         context: {
@@ -114,7 +113,6 @@ describe('createConnector', () => {
       };
       const props = {
         hello: 'there',
-        canRender: true,
       };
       let listener;
       const wrapper = mount(<Connected {...props} />, {
@@ -202,7 +200,7 @@ describe('createConnector', () => {
       };
 
       // also update props
-      props = { hello: 'you', canRender: true };
+      props = { hello: 'you' };
       wrapper.setProps(props);
 
       listener();
